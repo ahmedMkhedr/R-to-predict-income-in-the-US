@@ -1,8 +1,3 @@
----
-title: "INF2309_Final_Project_Emily"
-output: html_document
----
-
 # 0 Setup
 ```{r}
 # setwd('./Downloads') # relative path
