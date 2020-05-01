@@ -1,0 +1,967 @@
+---
+title: "INF2309_Final_Project_Emily"
+output: html_document
+---
+
+# 0 Setup
+```{r}
+# setwd('./Downloads') # relative path
+# install.packages(c('dplyr', 'e1071', 'corrplot', 'data.table', 'mltools'))
+# install.packages(c('MASS', 'caret', 'class', 'gmodels', 'randomForest'))
+# install.packages(c('naivebayes', 'xgboost', 'rpart', 'fastDummies'))
+library(dplyr)
+library(e1071)
+library(corrplot)
+library(data.table)
+library(mltools)
+library(MASS)
+library(caret)
+library(class)
+library(gmodels)
+library(randomForest)
+library(naivebayes)
+library(xgboost)
+library(rpart)
+library(fastDummies)
+library(graphics)
+
+#Load Data Visualization Libraries 
+library(dslabs)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(ggthemes)
+library(tidyr) 
+library(ggpubr)
+library(qwraps2)
+
+```
+# 0.1 loading dataset
+This section to read the dataset from csv file and replace the colums with corresponding names, and perpare color columns for plotting charts and graphs.
+```{r}
+adult <- read.csv("~/Desktop/Raw_Income_Data.csv", 
+    col.names = c("age", "workclass", "fnlwgt", 
+                  "education", "education_num", "marital_status",
+                  "occupation", "relationship", "race", "sex",
+                  "capital_gain", "capital_loss", "hours_per_week","native_country", "income_class"))
+head(adult)
+
+#Prepare color columns for data exploration
+cols <- c("yellow2", "hotpink4" , "brown", 
+         "rosybrown2", "seagreen", "royalblue")
+
+qual <- c("workclass", "education", "marital_status", "occupation", 
+          "relationship", "race", "sex", "native_country", "income_class")
+
+quan <- c("age", "capital_gain", "capital_loss", "hours_per_week", "income_class")
+
+adult_qual <- subset(adult, select =qual) 
+
+adult_qual <- as.data.frame(adult_qual) 
+
+adult_quan <- subset(adult, select= quan) 
+
+```
+####################
+### 0.2 Data Exploration - QUALITATIVE VARIABLES
+####################
+This section is to plot Qualitative varibales including "Working Class, Education level, Martial Status, Occupation, Relationship,Sex,Race and Native Country". Furhter more analysis will be explain in our final report. 
+```{r}
+# Working Class
+totals <- adult_qual %>%
+  group_by(workclass) %>%
+  summarize(total = n())
+
+adult_qual %>% 
+  count(workclass, income_class) %>% 
+  ggplot(aes(x = reorder(workclass, n, sum), y = n, fill = income_class)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  coord_flip(ylim=c(0,25000)) +
+  labs(title = "Working Class vs Income Class", x = "", y = "Individual Count") +
+  scale_fill_discrete(name="Income (USD)")  +
+  theme_economist() +
+  geom_text(aes(workclass, total, label = total, fill = NULL), data = totals, nudge_y=1700)
+
+```
+```{r}
+# Education
+totals <- adult_qual %>%
+  group_by(education) %>%
+  summarize(total = n())
+
+adult_qual %>% 
+  count(education, income_class) %>% 
+  ggplot(aes(x = reorder(education, n, sum), y = n, fill = income_class)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  coord_flip(ylim=c(0,12200)) +
+  labs(title = "Education Level vs Income Class", x = "", y = "Individual Count") +
+  scale_fill_discrete(name="Income (USD)")  +
+  theme_economist() +
+  geom_text(aes(education, total, label = total, fill = NULL), data = totals, nudge_y=750)
+
+```
+
+```{r}
+#Marital Status
+totals <- adult_qual %>%
+    group_by(marital_status) %>%
+    summarize(total = n())
+
+adult_qual %>% 
+  count(marital_status, income_class) %>% 
+  ggplot(aes(x = reorder(marital_status, n, sum), y = n, fill = income_class)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  coord_flip(ylim=c(0,18000)) +
+  labs(title ="Marital Status vs Income Class", x = "", y = "Individual Count") +
+  scale_fill_discrete(name="Income (USD)")  +
+  theme_economist() +
+  geom_text(aes(marital_status, total, label = total, fill = NULL), data = totals, nudge_y=1000) +
+  facet_grid()
+```
+
+```{r}
+# Occupation
+totals <- adult_qual %>%
+  group_by(occupation) %>%
+  summarize(total = n())
+
+adult_qual %>% 
+  count(occupation, income_class) %>% 
+  ggplot(aes(x = reorder(occupation, n, sum), y = n, fill = income_class)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  coord_flip(ylim=c(0,4500)) +
+  labs(title = "Occupation vs Income Class", x = "", y = "Individual Count") +
+  scale_fill_discrete(name="Income (USD)")  +
+  theme_economist() +
+  geom_text(aes(occupation, total, label = total, fill = NULL), data = totals, nudge_y=200)
+
+```
+```{r}
+# Relationship
+totals <- adult_qual %>%
+  group_by(relationship) %>%
+  summarize(total = n())
+
+adult_qual %>% 
+  count(relationship, income_class) %>% 
+  ggplot(aes(x = reorder(relationship, n, sum), y = n, fill = income_class)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  coord_flip(ylim=c(0,15000)) +
+  labs(title = "Family Relationship vs Income Class", x = "", y = "Individual Count") +
+  scale_fill_discrete(name="Income (USD)")  +
+  theme_economist() +
+  geom_text(aes(relationship, total, label = total, fill = NULL), data = totals, nudge_y=700)
+```
+```{r}
+#Race
+totals <- adult_qual %>%
+    group_by(race) %>%
+    summarize(total = n())
+
+adult_qual %>% 
+  count(race, income_class) %>% 
+  ggplot(aes(x = reorder(race, n, sum), y = n, fill = income_class)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  coord_flip(ylim=c(0,35000)) +
+  labs(title = "Race vs Income Class", x = "", y = "Individual Count") +
+  scale_fill_discrete(name="Income (USD)")  +
+  theme_economist() +
+  geom_text(aes(race, total, label = total, fill = NULL), data = totals, nudge_y=1700) +
+  facet_grid()
+```
+```{r}
+#Sex
+totals <- adult_qual %>%
+  group_by(sex) %>%
+  summarize(total = n())
+
+adult_qual %>% 
+  count(sex, income_class) %>% 
+  ggplot(aes(x = reorder(sex, n, sum), y = n, fill = income_class)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  coord_flip(ylim=c(0,25000)) +
+  labs(title = "Sex vs Income Class", x = "", y = "Individual Count") +
+  scale_fill_discrete(name="Income (USD)")  +
+  theme_economist() +
+  geom_text(aes(sex, total, label = total, fill = NULL), data = totals, nudge_y=1700) +
+  facet_grid()
+
+```
+
+```{r}
+# Native Country
+totals <- adult_qual %>%
+  group_by(native_country) %>%
+  summarize(total = n()) %>%
+  filter(total > 90)
+
+adult_qual %>% 
+  filter(native_country %in% totals$native_country) %>%
+  count(native_country, income_class) %>% 
+  ggplot(aes(x = reorder(native_country, n, sum), y = n, fill = income_class)) +
+  geom_col(position = position_stack(reverse = TRUE), width = 0.5) +
+  coord_flip(ylim=c(0,31000)) +
+  labs(title = "Native Country vs Income Class - Top 10", x = "", y = "Individual Count") +
+  scale_fill_discrete(name="Income (USD)")  +
+  theme_economist() +
+  geom_text(aes(native_country, total, label = total, fill = NULL), data = totals, nudge_y=1500)
+```
+```{r}
+# Qualitative Tables
+
+#Label
+dfr_i <- adult_qual %>%
+  count(income_class) %>%
+  mutate(`(%)` = round(prop.table(n)*100, 2))
+
+dfr_i
+
+#Work Class
+dfr_wc <- adult_qual %>% 
+  count(income_class, workclass) %>% 
+  spread(income_class, n)   
+
+dfr_dist_wc <- adult_qual %>% 
+  count(workclass) %>%                            
+  mutate(`(%)` = round(prop.table(n)*100, 2)) %>%   
+  left_join(dfr_wc, by = 'workclass') %>%
+  rename("<=50K (n)" = " <=50K") %>%
+  rename(">50K (n)" = " >50K") 
+
+arrange(dfr_dist_wc, desc(n))
+
+
+#Education
+dfr_e <- adult_qual %>% 
+  count(income_class, education) %>% 
+  spread(income_class, n)   
+
+dfr_dist_e <- adult_qual %>% 
+  count(education) %>%                            
+  mutate(`(%)` = round(prop.table(n)*100, 2)) %>%   
+  left_join(dfr_e, by = 'education') %>%
+  rename("<=50K (n)" = " <=50K") %>%
+  rename(">50K (n)" = " >50K") 
+
+arrange(dfr_dist_e, desc(n))
+
+
+#Marital Status
+dfr_ms <- adult_qual %>% 
+  count(income_class, marital_status) %>% 
+  spread(income_class, n)   
+
+dfr_dist_ms <- adult_qual %>% 
+  count(marital_status) %>%                            
+  mutate(`(%)` = round(prop.table(n)*100, 2)) %>%   
+  left_join(dfr_ms, by = 'marital_status') %>%
+  rename("<=50K (n)" = " <=50K") %>%
+  rename(">50K (n)" = " >50K") 
+
+arrange(dfr_dist_ms, desc(n))
+
+
+#Occupation
+dfr_o <- adult_qual %>% 
+  count(income_class, occupation) %>% 
+  spread(income_class, n)   
+
+dfr_dist_o <- adult_qual %>% 
+  count(occupation) %>%                            
+  mutate(`(%)` = round(prop.table(n)*100, 2)) %>%   
+  left_join(dfr_o, by = 'occupation') %>%
+  rename("<=50K (n)" = " <=50K") %>%
+  rename(">50K (n)" = " >50K") 
+
+arrange(dfr_dist_o, desc(n))
+
+
+#Relationship
+dfr_r <- adult_qual %>% 
+  count(income_class, relationship) %>% 
+  spread(income_class, n)   
+
+dfr_dist_r <- adult_qual %>% 
+  count(relationship) %>%                            
+  mutate(`(%)` = round(prop.table(n)*100, 2)) %>%   
+  left_join(dfr_r, by = 'relationship') %>%
+  rename("<=50K (n)" = " <=50K") %>%
+  rename(">50K (n)" = " >50K") 
+
+arrange(dfr_dist_r, desc(n))
+
+
+#Race
+dfr_ra <- adult_qual %>% 
+  count(income_class, race) %>% 
+  spread(income_class, n)   
+
+dfr_dist_ra <- adult_qual %>% 
+  count(race) %>%                            
+  mutate(`(%)` = round(prop.table(n)*100, 2)) %>%   
+  left_join(dfr_ra, by = 'race') %>%
+  rename("<=50K (n)" = " <=50K") %>%
+  rename(">50K (n)" = " >50K") 
+
+arrange(dfr_dist_ra, desc(n))
+
+
+#Sex
+dfr_s <- adult_qual %>% 
+  count(income_class, sex) %>% 
+  spread(income_class, n)
+
+dfr_dist_s <- adult_qual %>% 
+  count(sex) %>%                            
+  mutate(`(%)` = round(prop.table(n)*100, 2)) %>%   
+  left_join(dfr_s, by = 'sex') %>%
+  rename("<=50K (n)" = " <=50K") %>%
+  rename(">50K (n)" = " >50K")
+
+arrange(dfr_dist_s, desc(n))
+
+
+#Native Country
+dfr_nc <- adult_qual %>% 
+  count(income_class, native_country) %>% 
+  spread(income_class, n)   
+
+dfr_dist_nc <- adult_qual %>% 
+  count(native_country) %>%                            
+  mutate(`(%)` = round(prop.table(n)*100, 2)) %>%  
+  left_join(dfr_nc, by = 'native_country') %>%
+  rename("<=50K (n)" = " <=50K") %>%
+  rename(">50K (n)" = " >50K") 
+
+arrange(dfr_dist_nc, desc(n))
+
+```
+####################
+### 0.3 Data Exploration - QUANTITATIVE ATTRIBUTES
+```{r}
+#Quantitative Charts
+
+#Age
+gghistogram(adult_quan, x = "age", bins = 30,
+   add = "mean", rug = TRUE,
+   color = "income_class", fill = "income_class",
+   palette = c("#FC4E07", "#0073C2FF"),
+   title = "Age Distribution by Income Class")
+
+#Work Hours per Week
+gghistogram(adult_quan, x = "hours_per_week", bins = 30,
+   add = "mean", rug = TRUE,
+   color = "income_class", fill = "income_class",
+   palette = c("#FC4E07", "#0073C2FF"),
+   title = "Weekly Work Hours by Income Class")
+
+
+#Capital Gains
+gghistogram(adult_quan, x = "capital_gain", bins = 30,
+   add = "mean", rug = TRUE,
+   color = "income_class", fill = "income_class",
+   palette = c("#FC4E07", "#0073C2FF"),
+   title = "Capital Gains by Income Class")
+
+#Capital Loss
+gghistogram(adult_quan, x = "capital_loss", bins = 30,
+   add = "mean", rug = TRUE,
+   color = "income_class", fill = "income_class",
+   palette = c("#FC4E07", "#0073C2FF"),
+   title = "Capital Loss by Income Class")
+
+```
+
+
+```{r}
+
+#Quantitative Tables
+options(qwraps2_markup = "markdown")
+q_summary <-
+  list("Age" =
+       list("min" = ~ min(.data$age),
+            "median" = ~ median(.data$age),
+            "max" = ~ max(.data$age),
+            "mean (sd)" = ~ qwraps2::mean_sd(.data$age)),
+       "Hours Per Week" =
+       list("min" = ~ min(.data$hours_per_week),
+            "median" = ~ median(.data$hours_per_week),
+            "max" = ~ max(.data$hours_per_week),
+            "mean (sd)" = ~ qwraps2::mean_sd(.data$hours_per_week)),
+      "Capital Gains" =
+       list("min" = ~ min(.data$capital_gain),
+            "median" = ~ median(.data$capital_gain),
+            "max" = ~ max(.data$capital_gain),
+            "mean (sd)" = ~ qwraps2::mean_sd(.data$capital_gain)),
+      "Capital Loss" =
+       list("min" = ~ min(.data$capital_loss),
+            "median" = ~ median(.data$capital_loss),
+            "max" = ~ max(.data$capital_loss),
+            "mean (sd)" = ~ qwraps2::mean_sd(.data$capital_loss)), 
+        "fnlwgt" =
+       list("min" = ~ min(.data$fnlwgt),
+            "median" = ~ median(.data$fnlwgt),
+            "max" = ~ max(.data$fnlwgt),
+            "mean (sd)" = ~ qwraps2::mean_sd(.data$fnlwgt))
+       )
+
+whole <- summary_table(adult, q_summary)
+
+by_income <- summary_table(group_by(adult, income_class), q_summary)
+
+both <- cbind(whole, by_income)
+
+print(both,
+      rtitle = "Quantitative Attributes",
+      cnames = c("ALL", "<=50K", ">50K"))
+
+```
+
+
+## 1.1 Data Cleaning - Handle missing values and special characters 
+According to the summary of dataset, the dataset have special character "?". So in this section, we will identify missing values and also handle special characters in the dataframe. 
+```{r}
+#Loading dataset
+data <- adult
+summary(data)
+# check number of missing in the whole dataframe
+sum(is.na(data))
+# check number of missing in each column
+sapply(data, function(x) sum(is.na(x)))
+# Accroding to the result, there is no missing values in this dataset. Our next step is to remove special characters like "?,!" 
+# Remove special character ? in dataset
+data <- filter(data, workclass != " ?" & occupation != " ?" & native_country != " ?")
+nrow(data)
+```
+
+## 1.2 Data transforamtion - Convert categorical data into numerical data
+This dataset contains several catergoical/ interval data such as workclass eduction, marital_status, in this section, we will convert those type of data into one hot encoded columns.
+```{r}
+# df <- mutate_all(data, function(x) as.numeric(x))
+# head(df)
+
+# remove one degree of freedom using remove_first_dummy
+# remove the original categorical column
+df <- dummy_cols(data, remove_first_dummy = TRUE, remove_selected_columns = TRUE)
+head(df)
+```
+
+```{r}
+# remove zero variation columns
+colnames(df)[colSums(df) == 0]
+df <- subset(df, select = -c(`workclass_ Never-worked`))
+```
+
+## 1.3 Data Transformation - Data Skewness 
+This feature is important since the scale used for the values for each variable might be different. The best practice is to normalize the data and transform all the values to a common scale between 0 and 1.If the skewness is less than 
+1(negatively skewed) or greater than 1(positively skewed), the data are highly skewed. 
+
+
+```{r}
+input1 <- e1071::skewness(df$fnlwgt)
+input2 <- e1071::skewness(df$capital_gain)
+input3 <- e1071::skewness(df$capital_loss)
+skew_table <- matrix(c(input1,input2,input3),ncol=3,byrow=TRUE)
+colnames(skew_table) <- c("fnlwgt","capital_gain","capital_loss")
+rownames(skew_table) <- c("skewness score")
+skew_table <- as.table(skew_table)
+skew_table
+#The skewness result of variable fnlwgt is 1.446847, which indicates higly skewed and need to transformate the data. 
+```
+```{r}
+#Since both features capital_gain and capital_loss are highly skewed varaibles, we decided to combine capital_gain and capital_loss into one feature and then transform into one-hot encoding. 
+df <- mutate(df, `capital_gain` = ifelse(`capital_gain` - `capital_loss` > 0, 1, 0))
+df <- subset(df, select = -c(`capital_loss`))
+```
+
+
+# 1.4 Data Transformation - Apply Transformation 
+In this section, we will apply several data transformations methods and compare the best one. Data transformation methods including 1.Square-root transformation 2.Cube-root transformation 3.Log transformation 4.Tukey power transformation
+
+```{r}
+####1.Square-root transformation
+T_sqrt <- sqrt(df$fnlwgt)
+T_sqrt_skewness <- e1071::skewness(T_sqrt)
+hist(T_sqrt, main = "1.Square-Root Distribution")
+
+####2.Cube-root transformation
+T_cub <- sign(df$fnlwgt) * abs(df$fnlwgt)^(1/3) 
+T_cub_skewness <- e1071::skewness(T_cub)
+hist(T_cub, main = "2.Cube-Root Distribution")
+
+###3.Log transformation 
+T_log <- log(df$fnlwgt)
+T_log_skewness <- e1071::skewness(T_log)
+hist(T_log, main = "3.log Transformation Distribution")
+
+###Comparision of Skewness table after data transformation 
+skew_table_2 <- matrix(c(T_sqrt_skewness,T_cub_skewness,T_log_skewness),ncol=3,byrow=TRUE)
+colnames(skew_table_2) <- c("Sqrt transformation","Cube tranformation","Log transformation")
+rownames(skew_table_2) <- c("skewness score")
+skew_table_2
+
+###From the comparision of skewness score, we found out that Cube root transformation is closer than normalization than others. And we decided to apply Cube root transformation to variable "fglwgt". 
+
+df$fnlwgt <- T_cub
+```
+
+## 1.6.1 Detecting outliers - fnlwgt 
+```{r}
+input <- T_cub 
+outlier_values <- boxplot.stats(input)$out # outlier values in column fnlwgt
+boxplot(input, main="fnlwgt", boxwex=0.3)
+mtext(paste("Outliers: ", paste(outlier_values, collapse=", ")), cex=0.6)
+qqnorm(data$fnlwgt, ylab="Sample Quantiles for fnlwgt")
+qqline(data$fnlwgt, col="red")
+```
+### 1.6.2 Handling outliers - Univariate Analysis (outlier in one column)
+We choose to handle outliers by calculating the 1st, 3rd, quartiles and 5th and capping to the values of the 5th or 95th percentiles. 
+```{r}
+x <- df$fnlwgt
+summary(x)
+#outlier_values <- boxplot.stats(x)$out
+#outlier_values
+# get the values of the 1st and 3rd quartiles
+qnt <- quantile(x, probs=c(.25, .75), na.rm = T)
+# values of the 5th and 95th percentile
+caps <- quantile(x, probs=c(.05, .95), na.rm = T)
+H <- 1.5 * IQR(x, na.rm = T)   ##calculate 1.5 x IQR
+x[x < (qnt[1] - H)] <- caps[1]
+x[x > (qnt[2] + H)] <- caps[2] 
+summary(x) #m inimum value changed
+outlier_values <- boxplot.stats(x)$out
+outlier_values # no more outliers
+df$fnlwgt <- x
+```
+
+
+## 1.7 CORRELATION ANALYSIS
+Identify highly correlated "numeric" variables
+```{r}
+###draw correlation matrix of the numeric independent variables only
+num_data <- df[] ### only numeric independent vars
+correlationMatrix <- cor(df, method = "pearson") 
+# correlationMatrix
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(correlationMatrix, method="color", col=col(200),   
+         type="upper", order="hclust", 
+         tl.col="black", tl.srt=45, tl.cex= 0.2, #Text label color and rotation
+         # Combine with significance
+         sig.level = 0.01, 
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE
+) 
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+# identify columns with significant correlations(absolute value greater than 0.6)
+which(correlationMatrix > 0.6 & correlationMatrix < 1, arr.ind = TRUE)
+which(correlationMatrix < -0.6, arr.ind = TRUE)
+
+# removing high correlation columns
+df_lowCorr <- subset(df, select = -c(`marital_status_ Never-married`, `race_ White`))
+df_lowCorr
+```
+
+
+## 2.0 Feature selection & feature engineering
+```{r}
+# casting type for label column
+df_lowCorr <- mutate(df_lowCorr, `income_class_>50K` = ifelse(`income_class_>50K` == 0, '0', '1'))
+
+# formatting column names, i.e. removing whitespace
+colnames(df_lowCorr) <- sapply(colnames(df_lowCorr), function(x) {gsub(' ', '', x)})
+
+head(df_lowCorr)
+```
+
+```{r}
+# separate full dataset and dataset without sensitive columns
+# sensitive: race, native_country, relationship, sex
+
+sensitive_ind <- colnames(df_lowCorr) %like% 'race' | colnames(df_lowCorr) %like% 'native_country' | 
+  colnames(df_lowCorr) %like% 'relationship' | colnames(df_lowCorr) %like% 'sex'
+sensitive_cols <- colnames(df_lowCorr)[sensitive_ind]
+
+df_exSensitive <- df_lowCorr[ ,which((colnames(df_lowCorr) %in% sensitive_cols)==FALSE)]
+df_inSensitive <- df_lowCorr
+```
+
+
+```{r}
+# forward feature selection on excluding-sensitive-columns dataset
+full <- lm(`income_class_>50K` ~ ., data = df_exSensitive)
+null <- lm(`income_class_>50K` ~ 1, data = df_exSensitive)
+forwardS <- stepAIC(null, scope=list(lower=null, upper=full), direction="forward", trace=FALSE)
+summary(forwardS)
+```
+
+```{r}
+# backward feature selection on excluding-sensitive-columns dataset
+backwardE <- stepAIC(full, direction="backward", trace=FALSE)
+summary(backwardE)
+```
+
+```{r}
+# forward feature selection on including-sensitive-columns dataset
+full_sensi <- lm(`income_class_>50K` ~ ., data = df_inSensitive)
+null_sensi <- lm(`income_class_>50K` ~ 1, data = df_inSensitive)
+forwardS_sensi <- stepAIC(null_sensi, scope=list(lower=null_sensi, upper=full_sensi), direction="forward", trace=FALSE)
+summary(forwardS_sensi)
+```
+
+```{r}
+# backward feature selection on including-sensitive-columns dataset
+backwardE_sensi <- stepAIC(full_sensi, direction="backward", trace=FALSE)
+summary(backwardE_sensi)
+```
+
+## 3.0 Modeling using excluding-sensitive-columns dataset
+```{r}
+# train test split
+set.seed(123)
+df_select_nonsensi <- subset(df_exSensitive, select = c(`income_class_>50K`, `marital_status_Married-civ-spouse`, 
+    education_num, capital_gain, `occupation_Exec-managerial`, 
+    age, hours_per_week, `occupation_Prof-specialty`, occupation_Sales, 
+    `workclass_Self-emp-not-inc`, `education_Prof-school`, 
+    `occupation_Tech-support`, `education_HS-grad`, `occupation_Farming-fishing`, 
+    `workclass_Self-emp-inc`, `workclass_Federal-gov`, education_Doctorate, 
+    education_Masters, `occupation_Protective-serv`, workclass_Private, 
+    `marital_status_Married-AF-spouse`, fnlwgt, `education_Assoc-acdm`, 
+    `education_Some-college`, `education_Assoc-voc`, `occupation_Machine-op-inspct`, 
+    `occupation_Handlers-cleaners`, `occupation_Transport-moving`, 
+    `education_7th-8th`, `occupation_Other-service`, education_Preschool, 
+    `education_1st-4th`, `education_5th-6th`, `workclass_Local-gov`))
+
+head(df_select_nonsensi)
+```
+
+## 3.1 Split dataset into 70% and 30% 
+```{r}
+set.seed(123)
+rn_train1 <- sample(nrow(df_select_nonsensi), floor(nrow(df_select_nonsensi)*0.7))
+train1 <- df_select_nonsensi[rn_train1, ]
+test1 <- df_select_nonsensi[-rn_train1, ]
+train_labels1 <- train1[, 1]
+test_labels1 <- test1[, 1]
+train_features1 <- train1[, -1]
+test_features1 <- test1[, -1]
+```
+
+## 3.2 Set up cross validation 5 folds repeat 3 times. 
+```{r}
+ctrl <- trainControl(method="repeatedcv", number = 5, repeats = 3)
+```
+
+## 3.3 Build different classifers
+```{r}
+# random forest
+set.seed(123)
+RFmodel_prc <- train(`income_class_>50K` ~ ., data = train1, method="rf", ntree=50, trControl = ctrl)
+test_predRF_prc <- predict(RFmodel_prc, test_features1)
+cf_RF_prc <- confusionMatrix(as.factor(test_predRF_prc), as.factor(test_labels1), positive="1", mode = "everything")
+print(cf_RF_prc)
+```
+
+```{r}
+# support vector machine with linear kernel
+set.seed(123)
+SVMmodel_prc1 <- train(`income_class_>50K` ~ ., data = train1, method="svmLinear",
+                       trControl = trainControl("cv", number = 3),
+                       preProcess = c("center", "scale"),
+                       tuneLength = 5)
+test_predSVM_prc1 <- predict(SVMmodel_prc1, test_features1)
+cf_SVM_prc1 <- confusionMatrix(as.factor(test_predSVM_prc1), as.factor(test_labels1), positive="1", mode = "everything")
+print(cf_SVM_prc1)
+```
+
+```{r}
+# support vector machine with RBF kernel
+set.seed(123)
+SVMmodel_prc3 <- train(`income_class_>50K` ~ ., data = train1, method="svmRadial", 
+                       trControl = trainControl("cv", number = 3),
+                       preProcess = c("center", "scale"),
+                       tuneLength = 5)
+test_predSVM_prc3 <- predict(SVMmodel_prc3, test_features1)
+cf_SVM_prc3 <- confusionMatrix(as.factor(test_predSVM_prc3), as.factor(test_labels1), positive="1", mode = "everything")
+print(cf_SVM_prc3)
+```
+
+```{r}
+# naive bayes
+set.seed(123)
+NBmodel_prc <- train(`income_class_>50K` ~ ., data = train1, method="naive_bayes", trControl = ctrl)
+test_predNB_prc <- predict(NBmodel_prc, test_features1)
+cf_NB_prc <- confusionMatrix(as.factor(test_predNB_prc), as.factor(test_labels1), positive="1", mode = "everything")
+print(cf_NB_prc)
+```
+
+```{r}
+# logistic regression
+set.seed(123)
+LRmodel_prc <- train(`income_class_>50K` ~ ., data = train1, method="glm", trControl = ctrl)
+test_predLR_prc <- predict(LRmodel_prc, test_features1)
+cf_LR_prc <- confusionMatrix(as.factor(test_predLR_prc), as.factor(test_labels1), positive="1" , mode = "everything")
+print(cf_LR_prc)
+```
+
+```{r}
+# eXtreme gradient boosting xgb
+set.seed(123)
+XGBmodel_prc <- train(`income_class_>50K` ~ ., data = train1, method="xgbLinear", trControl = ctrl)
+test_predXGB_prc <- predict(XGBmodel_prc, test_features1)
+cf_XGB_prc <- confusionMatrix(as.factor(test_predXGB_prc), as.factor(test_labels1), positive="1" , mode = "everything")
+print(cf_XGB_prc)
+```
+
+```{r}
+# eXtreme gradient boosting tree
+set.seed(123)
+XGBmodel_prc2 <- train(`income_class_>50K` ~ ., data = train1, method="xgbTree", trControl = ctrl)
+test_predXGB_prc2 <- predict(XGBmodel_prc2, test_features1)
+cf_XGB_prc2 <- confusionMatrix(as.factor(test_predXGB_prc2), as.factor(test_labels1), positive="1" , mode = "everything")
+print(cf_XGB_prc2)
+```
+
+```{r}
+# decision tree
+# for decision tree algorithm, need to remove special characters (i.e. space)
+# from the column names using make.names
+train_proper <- train1
+test_features_proper <- test_features1
+colnames(train_proper) <- make.names(colnames(train_proper))
+colnames(test_features_proper) <- make.names(colnames(test_features_proper))
+
+set.seed(123)
+DTmodel_prc <- train(`income_.50K` ~ ., data = train_proper, method="rpart", trControl = ctrl)
+test_predDT_prc <- predict(DTmodel_prc, test_features_proper)
+cf_DT_prc <- confusionMatrix(as.factor(test_predDT_prc), as.factor(test_labels1), positive="1" , mode = "everything")
+print(cf_DT_prc)
+```
+
+
+## 4.0 Modeling using including-sensitive-columns dataset
+```{r}
+# train test split
+set.seed(123)
+df_select_sensi <- subset(df_inSensitive, select = c(`income_class_>50K`, `marital_status_Married-civ-spouse`, 
+    education_num, capital_gain, `occupation_Exec-managerial`, 
+    age, hours_per_week, `occupation_Prof-specialty`, occupation_Sales, 
+    `workclass_Self-emp-not-inc`, `education_Prof-school`, 
+    `occupation_Tech-support`, sex_Male, relationship_Wife, 
+    `occupation_Farming-fishing`, `education_HS-grad`, `workclass_Federal-gov`, 
+    education_Doctorate, education_Masters, education_Bachelors, 
+    `workclass_Self-emp-inc`, `occupation_Protective-serv`, 
+    workclass_Private, `marital_status_Married-AF-spouse`, 
+    `occupation_Adm-clerical`, `native_country_United-States`, 
+    fnlwgt, `relationship_Not-in-family`, `education_7th-8th`, 
+    `occupation_Craft-repair`, `occupation_Other-service`, 
+    native_country_South, education_9th, `occupation_Priv-house-serv`, 
+    native_country_Columbia, race_Black, native_country_Mexico, 
+    native_country_China, native_country_Vietnam, race_Other, 
+    `marital_status_Married-spouse-absent`, native_country_India, 
+    native_country_Greece, `workclass_Without-pay`, `native_country_Outlying-US(Guam-USVI-etc)`, 
+    native_country_Cambodia, `education_Some-college`))
+
+head(df_select_sensi)
+```
+
+```{r}
+set.seed(123)
+rn_train2 <- sample(nrow(df_select_sensi), floor(nrow(df_select_sensi)*0.7))
+train2 <- df_select_sensi[rn_train2, ]
+test2 <- df_select_sensi[-rn_train2, ]
+train_labels2 <- train2[, 1]
+test_labels2 <- test2[, 1]
+train_features2 <- train2[, -1]
+test_features2 <- test2[, -1]
+```
+
+```{r}
+ctrl <- trainControl(method="repeatedcv", number = 2, repeats = 3)
+```
+
+```{r}
+# random forest
+set.seed(123)
+RFmodel_prc <- train(`income_class_>50K` ~ ., data = train2, method="rf", ntree=50, trControl = ctrl)
+test_predRF_prc <- predict(RFmodel_prc, test_features2)
+cf_RF_prc <- confusionMatrix(as.factor(test_predRF_prc), as.factor(test_labels2), positive="1", mode = "everything")
+print(cf_RF_prc)
+```
+
+```{r}
+# support vector machine with linear kernel
+set.seed(123)
+SVMmodel_prc1 <- train(`income_class_>50K` ~ ., data = train2, method="svmLinear",
+                       trControl = trainControl("cv", number = 3),
+                       preProcess = c("center", "scale"),
+                       tuneLength = 5)
+test_predSVM_prc1 <- predict(SVMmodel_prc1, test_features2)
+cf_SVM_prc1 <- confusionMatrix(as.factor(test_predSVM_prc1), as.factor(test_labels2), positive="1", mode = "everything")
+print(cf_SVM_prc1)
+```
+
+```{r}
+# support vector machine with RBF kernel
+set.seed(123)
+SVMmodel_prc3 <- train(`income_class_>50K` ~ ., data = train2, method="svmRadial", 
+                       trControl = trainControl("cv", number = 3),
+                       preProcess = c("center", "scale"),
+                       tuneLength = 5)
+test_predSVM_prc3 <- predict(SVMmodel_prc3, test_features2)
+cf_SVM_prc3 <- confusionMatrix(as.factor(test_predSVM_prc3), as.factor(test_labels2), positive="1", mode = "everything")
+print(cf_SVM_prc3)
+```
+
+```{r}
+# naive bayes
+set.seed(123)
+NBmodel_prc <- train(`income_class_>50K` ~ ., data = train2, method="naive_bayes", trControl = ctrl)
+test_predNB_prc <- predict(NBmodel_prc, test_features2)
+cf_NB_prc <- confusionMatrix(as.factor(test_predNB_prc), as.factor(test_labels2), positive="1", mode = "everything")
+print(cf_NB_prc)
+```
+
+```{r}
+# logistic regression
+set.seed(123)
+LRmodel_prc <- train(`income_class_>50K` ~ ., data = train2, method="glm", trControl = ctrl)
+test_predLR_prc <- predict(LRmodel_prc, test_features2)
+cf_LR_prc <- confusionMatrix(as.factor(test_predLR_prc), as.factor(test_labels2), positive="1" , mode = "everything")
+print(cf_LR_prc)
+```
+
+```{r}
+# eXtreme gradient boosting xgb
+set.seed(123)
+XGBmodel_prc <- train(`income_class_>50K` ~ ., data = train2, method="xgbLinear", trControl = ctrl)
+test_predXGB_prc <- predict(XGBmodel_prc, test_features2)
+cf_XGB_prc <- confusionMatrix(as.factor(test_predXGB_prc), as.factor(test_labels2), positive="1" , mode = "everything")
+print(cf_XGB_prc)
+```
+
+```{r}
+# eXtreme gradient boosting tree
+set.seed(123)
+XGBmodel_prc2 <- train(`income_class_>50K` ~ ., data = train2, method="xgbTree", trControl = ctrl)
+test_predXGB_prc2 <- predict(XGBmodel_prc2, test_features2)
+cf_XGB_prc2 <- confusionMatrix(as.factor(test_predXGB_prc2), as.factor(test_labels2), positive="1" , mode = "everything")
+print(cf_XGB_prc2)
+```
+
+```{r}
+# decision tree
+# for decision tree algorithm, need to remove special characters (i.e. space)
+# from the column names using make.names
+train_proper <- train2
+test_features_proper <- test_features2
+colnames(train_proper) <- make.names(colnames(train_proper))
+colnames(test_features_proper) <- make.names(colnames(test_features_proper))
+
+set.seed(123)
+DTmodel_prc <- train(`income_.50K` ~ ., data = train_proper, method="rpart", trControl = ctrl)
+test_predDT_prc <- predict(DTmodel_prc, test_features_proper)
+cf_DT_prc <- confusionMatrix(as.factor(test_predDT_prc), as.factor(test_labels2), positive="1" , mode = "everything")
+print(cf_DT_prc)
+```
+
+## 5.0 ModelOptimization - Ensemble Models with models excluding sensitive data
+```{r}
+# We choose to create ensemble models with the 'best' 3 models
+# The best models are defined by those with the highest accuracy
+# Our best 3 models: 
+# Multiple instances, fine tuning parameters for cross validation
+
+control1 <- trainControl(method="repeatedcv", number = 5, repeats=3, savePredictions="final", 
+                         classProbs=TRUE, index = createResample(train_proper$income_.50K))
+algorithmList1 <- c('svmRadial', 'xgbTree', 'xgbLinear')
+
+set.seed(123)
+models_income <- caretList(income_.50K ~ ., data= train_proper, trControl=control1, methodList=algorithmList1)
+
+set.seed(123)
+results_income1 <- resamples(models_income)
+summary(results_income1)
+dotplot(results_income1)
+modelCor(results_income1)
+```
+
+```{r}
+# SVMlinear was highly correlated with both XGB models
+# SVM will the lowest accuracy, so we remove from algorithmlist and re-run
+
+control1 <- trainControl(method="repeatedcv", number = 5, repeats=3, savePredictions="final", 
+                         classProbs=TRUE, index = createResample(train_proper$income_.50K))
+algorithmList2 <- c('xgbTree', 'xgbLinear')
+
+set.seed(123)
+models_income <- caretList(income_.50K ~ ., data= train_proper, trControl=control1, methodList=algorithmList2)
+
+set.seed(123)
+results_income2 <- resamples(models_income)
+summary(results_income2)
+dotplot(results_income2)
+modelCor(results_income2)
+```
+
+```{r}
+# Testing combinations of top 3, replaced XGB with SVM
+# similar outcomes from the ensemble model run
+
+control1 <- trainControl(method="repeatedcv", number = 5, repeats=3, savePredictions="final", 
+                         classProbs=TRUE, index = createResample(train_proper$income_.50K))
+algorithmList3 <- c('svmRadial', 'xgbTree')
+
+set.seed(123)
+models_income <- caretList(income_.50K ~ ., data= train_proper, trControl=control1, methodList=algorithmList3)
+
+set.seed(123)
+results_income3 <- resamples(models_income)
+summary(results_income3)
+dotplot(results_income3)
+modelCor(results_income3)
+```
+
+# 5.2 Ensemble models with models including sensitive data
+```{r}
+# We choose to create ensemble models with the 'best' 3 models
+# The best models are defined by those with the highest accuracy
+# Our best 3 models: 
+# Multiple instances, fine tuning parameters for cross validation
+
+control2 <- trainControl(method="repeatedcv", number = 2, repeats=3, savePredictions="final", 
+                         classProbs=TRUE, index = createResample(train_proper$income_.50K))
+algorithmList2 <- c('glm', 'xgbTree', 'xgbLinear')
+
+set.seed(123)
+models_income2 <- caretList(income_.50K ~ ., data= train_proper, trControl=control2, methodList=algorithmList2)
+
+set.seed(123)
+results_income3 <- resamples(models_income2)
+summary(results_income3)
+dotplot(results_income3)
+modelCor(results_income3)
+```
+
+```{r}
+# We choose to create ensemble models with the 'best' 3 models
+# The best models are defined by those with the highest accuracy
+# Our best 3 models: 
+# Multiple instances, fine tuning parameters for cross validation
+
+control2 <- trainControl(method="repeatedcv", number = 2, repeats=3, savePredictions="final", 
+                         classProbs=TRUE, index = createResample(train_proper$income_.50K))
+algorithmList3 <- c('xgbTree', 'xgbLinear')
+
+set.seed(123)
+models_income2 <- caretList(income_.50K ~ ., data= train_proper, trControl=control2, methodList=algorithmList3)
+
+set.seed(123)
+results_income3 <- resamples(models_income2)
+summary(results_income3)
+dotplot(results_income3)
+modelCor(results_income3)
+```
